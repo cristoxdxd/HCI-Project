@@ -1,35 +1,65 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import React, { useState } from 'react';
+import QuestionCard from './components/QuestionCard';
+import Score from './components/Score';
+import GameOver from './components/GameOver';
 
-function App() {
-  const [count, setCount] = useState(0)
+const questions = [
+  {
+    question: 'What is the capital of France?',
+    options: ['Paris', 'Berlin', 'Madrid', 'Rome'],
+    correct: 0,
+  },
+  {
+    question: 'Who wrote "To Kill a Mockingbird"?',
+    options: ['Harper Lee', 'J.K. Rowling', 'Ernest Hemingway', 'Mark Twain'],
+    correct: 0,
+  },
+  {
+    question: 'What is 2 + 2?',
+    options: ['3', '4', '5', '6'],
+    correct: 1,
+  },
+];
+
+const App = () => {
+  const [currentQuestion, setCurrentQuestion] = useState(0);
+  const [score, setScore] = useState(0);
+  const [gameOver, setGameOver] = useState(false);
+
+  const handleAnswer = (index) => {
+    if (index === questions[currentQuestion].correct) {
+      setScore(score + 1);
+    }
+    const nextQuestion = currentQuestion + 1;
+    if (nextQuestion < questions.length) {
+      setCurrentQuestion(nextQuestion);
+    } else {
+      setGameOver(true);
+    }
+  };
+
+  const restartGame = () => {
+    setCurrentQuestion(0);
+    setScore(0);
+    setGameOver(false);
+  };
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
-}
+    <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center text-center p-5">
+      <h1 className="text-3xl font-bold text-blue-600 mb-6">Questions Game</h1>
+      {gameOver ? (
+        <GameOver score={score} restartGame={restartGame} />
+      ) : (
+        <>
+          <Score score={score} total={questions.length} />
+          <QuestionCard
+            question={questions[currentQuestion]}
+            handleAnswer={handleAnswer}
+          />
+        </>
+      )}
+    </div>
+  );
+};
 
-export default App
+export default App;
