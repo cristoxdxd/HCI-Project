@@ -45,8 +45,8 @@ const App = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center text-center p-5">
-      <h1 className="text-3xl font-bold text-blue-600 mb-6">Questions Game</h1>
+    <div className="min-h-screen bg-gradient-to-r from-blue-500 to-purple-600 flex flex-col items-center justify-center text-center p-5">
+      <h1 className="text-4xl font-extrabold text-white mb-8 drop-shadow-lg">Questions Game</h1>
       {gameOver ? (
         <GameOver score={score} restartGame={restartGame} />
       ) : (
