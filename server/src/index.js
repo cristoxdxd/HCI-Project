@@ -19,7 +19,8 @@ const PORT = 3001;
 app.use(cors());
 app.use(express.json()); // Parse JSON bodies
 
-// Login y Registro Combinado
+
+// Login Route
 app.post("/api/login", async (req, res) => {
   const { email, password } = req.body;
 
@@ -34,15 +35,7 @@ app.post("/api/login", async (req, res) => {
     ]);
 
     if (result.rows.length === 0) {
-      // Usuario no existe: Registrar
-      const hashedPassword = await bcrypt.hash(password, 10);
-
-      await pool.query(
-        "INSERT INTO users (email, password) VALUES ($1, $2)",
-        [email, hashedPassword]
-      );
-
-      return res.status(201).json({ message: "Usuario registrado con éxito", email });
+      return res.status(404).json({ error: "Usuario no encontrado" }); // Retorna error si el usuario no existe
     }
 
     // Usuario ya existe: Verificar contraseña
@@ -55,13 +48,13 @@ app.post("/api/login", async (req, res) => {
 
     res.json({ message: "Inicio de sesión exitoso", email: user.email });
   } catch (error) {
-    console.error("Error en el login/registro:", error);
+    console.error("Error en el login", error);
     res.status(500).json({ error: "Error en el servidor" });
   }
 });
 
-// Login Route
-app.post("/api/login", async (req, res) => {
+// Register Route
+app.post("/api/register", async (req, res) => {
   const { email, password } = req.body;
 
   if (!email || !password) {
@@ -69,27 +62,31 @@ app.post("/api/login", async (req, res) => {
   }
 
   try {
-    // Verificar si el usuario existe en la base de datos
-    const result = await pool.query(
-      "SELECT * FROM users WHERE email = $1 AND password = $2",
-      [email, password]
-    );
+    // Verificar si el usuario ya existe
+    const result = await pool.query("SELECT * FROM users WHERE email = $1", [
+      email,
+    ]);
 
     if (result.rows.length > 0) {
-      // Usuario encontrado
-      const user = result.rows[0];
-      res.json({ message: "Inicio de sesión exitoso", user });
-    } else {
-      // Usuario no encontrado
-      res.status(401).json({ error: "Credenciales incorrectas" });
+      return res.status(400).json({ error: "El usuario ya existe" });
     }
+
+    // Crear el usuario nuevo
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    await pool.query(
+      "INSERT INTO users (email, password) VALUES ($1, $2)",
+      [email, hashedPassword]
+    );
+
+    res.status(201).json({ message: "Usuario registrado con éxito" });
   } catch (error) {
-    console.error("Error during login:", error);
-    res.status(500).json({ error: "Error en el servidor al iniciar sesión" });
+    console.error("Error en el registro:", error);
+    res.status(500).json({ error: "Error en el servidor" });
   }
 });
 
-// Sample Route
+// Question Route
 app.get("/api/questions", async (req, res) => {
   try {
     // Consulta SQL para obtener las preguntas y sus opciones
