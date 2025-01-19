@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 
-const useGame = () => {
+const useGame = (userEmail) => {
   const [questions, setQuestions] = useState([]);
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [score, setScore] = useState(0);
@@ -21,21 +21,30 @@ const useGame = () => {
     fetchQuestions();
   }, []);
 
-  const handleAnswer = (selectedOption) => {
-    if (selectedOption === questions[currentQuestion].correct) {
-      setScore((prevScore) => prevScore + 1);
-      setCorrectAnswers((prevAnswers) => [
-        ...prevAnswers,
-        questions[currentQuestion].correct,
-      ]);
+  const handleAnswer = async (selectedOption, responseTime) => {
+    const isCorrect = selectedOption === questions[currentQuestion].correct;
+  
+    // Guardar el progreso en el backend
+    try {
+      await axios.post("/api/progress", {
+        email: userEmail, // Asegúrate de pasar el email del usuario autenticado
+        idQuestion: questions[currentQuestion].id,
+        status: isCorrect,
+        responseTime: responseTime,
+      });
+    } catch (error) {
+      console.error("Error al guardar el progreso:", error);
     }
-    const nextQuestion = currentQuestion + 1;
-    if (nextQuestion < questions.length) {
-      setCurrentQuestion(nextQuestion);
+  
+    // Actualizar el estado local del juego
+    setScore((prevScore) => (isCorrect ? prevScore + 1 : prevScore));
+    if (currentQuestion < questions.length - 1) {
+      setCurrentQuestion((prev) => prev + 1);
     } else {
       setGameOver(true);
     }
   };
+  
 
   const restartGame = () => {
     setCurrentQuestion(0);

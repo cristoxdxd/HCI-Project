@@ -15,7 +15,7 @@ const App = () => {
     correctAnswers,
     handleAnswer,
     restartGame,
-  } = useGame();
+  } = useGame(user);
 
   const handleLogin = (email) => {
     setUser(email);  // Guardar el email del usuario autenticado

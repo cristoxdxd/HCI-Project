@@ -125,6 +125,54 @@ app.get("/api/questions", async (req, res) => {
   }
 });
 
+// Ruta para guardar o actualizar el progreso del usuario
+app.post("/api/progress", async (req, res) => {
+  const { email, idQuestion, status, responseTime } = req.body;
+
+  if (!email || !idQuestion || typeof status !== "boolean" || responseTime == null) {
+    return res.status(400).json({ error: "Faltan campos obligatorios" });
+  }
+
+  try {
+
+    const responseTimeFormatted = parseFloat(responseTime).toFixed(2); // Asegurarse de que sea numérico y tenga dos decimales
+
+    const userResult = await pool.query("SELECT iduser FROM users WHERE email = $1", [email]);
+
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ error: "Usuario no encontrado" });
+    }
+
+    const userId = userResult.rows[0].iduser;
+
+    // Verificar si ya existe un registro para este usuario y pregunta
+    const progressResult = await pool.query(
+      "SELECT idprogress FROM progress WHERE iduser = $1 AND idquestion = $2",
+      [userId, idQuestion]
+    );
+
+    if (progressResult.rows.length > 0) {
+      // Actualizar el estado existente
+      await pool.query(
+        "UPDATE progress SET status = $1, response_time = $2 WHERE iduser = $3 AND idquestion = $4",
+        [status, responseTimeFormatted, userId, idQuestion]
+      );
+    } else {
+      // Insertar un nuevo registro de progreso
+      await pool.query(
+        "INSERT INTO progress (iduser, idquestion, status, response_time) VALUES ($1, $2, $3, $4)",
+        [userId, idQuestion, status, responseTimeFormatted]
+      );
+    }
+
+    res.status(200).json({ message: "Progreso guardado correctamente" });
+  } catch (error) {
+    console.error("Error al guardar el progreso:", error);
+    res.status(500).json({ error: "Error en el servidor" });
+  }
+});
+
+
 // Start the Server
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
