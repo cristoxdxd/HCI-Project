@@ -19,6 +19,46 @@ const PORT = 3001;
 app.use(cors());
 app.use(express.json()); // Parse JSON bodies
 
+app.get("/api/categories", async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT 
+        c.idcategory, 
+        c.category,
+        sc.idsubcategory, 
+        sc.subcategory
+      FROM categories c
+      LEFT JOIN subcategories sc ON sc.idcategory = c.idcategory
+    `);
+
+    const categories = [];
+    result.rows.forEach((row) => {
+      const existingCategory = categories.find(
+        (cat) => cat.id === row.idcategory
+      );
+
+      if (existingCategory) {
+        existingCategory.subcategories.push({
+          id: row.idsubcategory,
+          name: row.subcategory,
+        });
+      } else {
+        categories.push({
+          id: row.idcategory,
+          name: row.category,
+          subcategories: row.idsubcategory
+            ? [{ id: row.idsubcategory, name: row.subcategory }]
+            : [],
+        });
+      }
+    });
+
+    res.json(categories);
+  } catch (error) {
+    console.error("Error fetching categories:", error);
+    res.status(500).json({ error: "Error al obtener las categorías" });
+  }
+});
 
 // Login Route
 app.post("/api/login", async (req, res) => {
