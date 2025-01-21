@@ -3,10 +3,12 @@ import Login from './components/Login';
 import QuestionCard from './components/QuestionCard';
 import Score from './components/Score';
 import GameOver from './components/GameOver';
+import CategorySelector from "./components/CategorySelector";
 import useGame from './hooks/useGame';
 
 const App = () => {
   const [user, setUser] = useState(null);
+  const [category, setCategory] = useState(null);
   const {
     questions,
     currentQuestion,
@@ -15,10 +17,14 @@ const App = () => {
     correctAnswers,
     handleAnswer,
     restartGame,
-  } = useGame(user);
+  } = useGame(user, category);
 
   const handleLogin = (email) => {
     setUser(email);  // Guardar el email del usuario autenticado
+  };
+
+  const handleCategorySelection = (selectedCategory, selectedSubcategory) => {
+    setCategory({ selectedCategory, selectedSubcategory });
   };
 
   return (
@@ -26,8 +32,9 @@ const App = () => {
       <h1 className="text-4xl font-extrabold text-white mb-8 drop-shadow-lg">Linux</h1>
       
       {user ? (
-        gameOver ? (
-        <GameOver score={score} correctAnswers={correctAnswers} restartGame={restartGame} />
+        category ? (
+          gameOver ? (
+          <GameOver score={score} correctAnswers={correctAnswers} restartGame={restartGame} />
       ) : (
         <>
           <Score score={score} total={questions.length} />
@@ -40,6 +47,9 @@ const App = () => {
         </>
       )  
       ) : (
+        <CategorySelector onSelectCategory={handleCategorySelection} />
+      )
+    ): (
         <Login handleLogin={handleLogin} />
       )}
     </div>
