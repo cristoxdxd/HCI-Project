@@ -143,6 +143,7 @@ app.get("/api/questions", async (req, res) => {
       q.idquestion,  
       q.question,
       q.correct,
+      q.feedback,
       o.idoption,
       o.option
     FROM questions q
@@ -164,6 +165,7 @@ app.get("/api/questions", async (req, res) => {
           id: row.idquestion,
           question: row.question,
           correct: row.correct,
+          feedback: row.feedback,
           options: row.idoption ? [row.option] : [],
         });
       }
