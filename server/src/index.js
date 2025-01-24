@@ -128,30 +128,18 @@ app.post("/api/register", async (req, res) => {
 
 // Question Route
 app.get("/api/questions", async (req, res) => {
-  const { categoryId, subcategoryId } = req.query;
-
-  if (!categoryId || !subcategoryId) {
-    return res
-      .status(400)
-      .json({ error: "Faltan los parámetros categoryId o subcategoryId" });
-  }
-
   try {
     // Consulta SQL para obtener las preguntas y sus opciones
     const result = await pool.query(`
     SELECT 
-      q.idquestion,  
-      q.question,
-      q.correct,
-      q.feedback,
-      o.idoption,
-      o.option
+		q.idquestion,  
+    q.question,
+		q.correct,
+		o.idoption,
+		o.option
     FROM questions q
-    JOIN subcategories sc ON sc.idcategory = q.idcategory
     LEFT JOIN options o ON o.idquestion = q.idquestion
-    WHERE q.idcategory = $1 AND sc.idsubcategory = $2
-`,
-[categoryId, subcategoryId]);
+    `);
 
     // Agrupar las opciones por cada pregunta
     const questions = [];
@@ -165,8 +153,7 @@ app.get("/api/questions", async (req, res) => {
           id: row.idquestion,
           question: row.question,
           correct: row.correct,
-          feedback: row.feedback,
-          options: row.idoption ? [row.option] : [],
+          options: [row.option],
         });
       }
     });

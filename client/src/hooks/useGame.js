@@ -11,18 +11,8 @@ const useGame = (userEmail, category) => {
 
   useEffect(() => {
     const fetchQuestions = async () => {
-      
-      if (!userEmail || !category?.selectedCategory?.id || !category?.selectedSubcategory?.id) {
-        return;
-      }
-
       try {
-        const response = await axios.get("/api/questions", {
-          params: {
-            categoryId: category.selectedCategory.id,
-            subcategoryId: category.selectedSubcategory.id,
-          },
-        });
+        const response = await axios.get("/api/questions");
         setQuestions(response.data);
       } catch (error) {
         console.error("Error fetching questions:", error);
@@ -30,7 +20,7 @@ const useGame = (userEmail, category) => {
     };
 
     fetchQuestions();
-  }, [category]);
+  }, []);
 
   const handleAnswer = async (selectedOption, responseTime) => {
     
