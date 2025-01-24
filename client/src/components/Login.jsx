@@ -99,7 +99,7 @@ const Login = ({ handleLogin }) => {
         )}
         <button
           type="submit"
-          className="bg-gradient-to-r from-blue-500 to-indigo-500 text-white font-semibold py-3 px-5 rounded-lg hover:from-blue-600 hover:to-indigo-600 transition-transform transform hover:scale-105"
+          className="bg-gradient-to-r from-orange-500 to-orange-500 text-white font-semibold py-3 px-5 rounded-lg hover:from-orange-600 hover:to-orange-600 transition-transform transform hover:scale-105"
         >
           {isRegistering ? 'Crear Cuenta' : 'Iniciar Sesión'}
         </button>

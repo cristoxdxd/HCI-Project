@@ -2,12 +2,12 @@ import React, { useEffect, useState } from 'react';
 
 const QuestionCard = ({ question, handleAnswer }) => {
   
-  const [timeLeft, setTimeLeft] = useState(60); // 10 segundos iniciales
+  const [timeLeft, setTimeLeft] = useState(30); // 10 segundos iniciales
   const [startTime, setStartTime] = useState(Date.now()); // Tiempo de inicio
 
   useEffect(() => {
     
-    setTimeLeft(60);
+    setTimeLeft(30);
     setStartTime(Date.now());
 
     const timer = setInterval(() => {
@@ -30,7 +30,7 @@ const QuestionCard = ({ question, handleAnswer }) => {
     handleAnswer(option, responseTime); // Enviar tiempo al backend
   };
 
-  const progressBarWidth = (timeLeft / 60) * 100;
+  const progressBarWidth = (timeLeft / 30) * 100;
     
   return (
     <div className="bg-white shadow-lg rounded-xl p-8 w-full max-w-lg mx-auto">
@@ -46,7 +46,7 @@ const QuestionCard = ({ question, handleAnswer }) => {
           <button
             key={option}
             onClick={() => handleUserAnswer(option)}
-            className="bg-gradient-to-r from-blue-500 to-indigo-500 text-[22px] text-white font-semibold py-3 px-5 rounded-lg hover:from-blue-600 hover:to-indigo-600 transition-transform transform hover:scale-105"
+            className="bg-gradient-to-r from-orange-500 to-orange-500 text-[22px] text-white font-semibold py-3 px-5 rounded-lg hover:from-orange-600 hover:to-orange-600 transition-transform transform hover:scale-105"
           >
             {option}
           </button>
