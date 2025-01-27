@@ -198,7 +198,7 @@ app.post("/api/progress", async (req, res) => {
     } else {
       // Insertar un nuevo registro de progreso
       await pool.query(
-        "INSERT INTO progress (iduser, idquestion, status, response_time) VALUES ($1, $2, $3, $4)",
+        "INSERT INTO progress (iduser, idquestion, status, response_time,idlevel) VALUES ($1, $2, $3, $4, (SELECT idlevel FROM questions WHERE idquestion = $2))",
         [userId, idQuestion, status, responseTimeFormatted]
       );
     }
