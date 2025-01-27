@@ -118,8 +118,6 @@ app.get("/api/questions/:idCategory", async (req, res) => {
     // Consulta SQL para obtener las preguntas y sus opciones
     const { idCategory } = req.params;
 
-    console.log("Recibiendo solicitud para preguntas de la categoría:", idCategory);
-
     const result = await pool.query(`
     SELECT 
 		q.idquestion,  
@@ -134,7 +132,7 @@ app.get("/api/questions/:idCategory", async (req, res) => {
     [idCategory]
     );
 
-    console.log("Resultado de la consulta:", result.rows);
+
 
     if (!result.rows || result.rows.length === 0) {
       return res.json([]); // Devolvemos un array vacío en caso de no haber resultados

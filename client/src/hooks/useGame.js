@@ -1,7 +1,16 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 
-const useGame = (userEmail, category) => {
+function shuffleArray(array) {
+  const result = [...array];
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  return result;
+}
+
+const useGame = (userEmail) => {
   const [questions, setQuestions] = useState([]);
   const [topics, setTopics] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -36,7 +45,23 @@ const useGame = (userEmail, category) => {
     if (selectedCategory) {
       axios.get(`/api/questions/${selectedCategory}`)
         .then((res) => {
-          setQuestions(Array.isArray(res.data) ? res.data : []);
+          // Verificamos si res.data es un array
+          const data = Array.isArray(res.data) ? res.data : [];
+
+          // Barajamos las opciones de cada pregunta antes de guardarlas en el estado
+          const shuffledQuestions = data.map((q) => {
+            const shuffledOptions = shuffleArray(q.options);
+            return {
+              ...q,
+              options: shuffledOptions,
+            };
+          });
+
+          setQuestions(shuffledQuestions);
+          setCurrentQuestion(0);
+          setScore(0);
+          setGameOver(false);
+          setFeedback(null);
         })
         .catch((error) => {
           console.error("Error fetching questions:", error);
@@ -79,11 +104,14 @@ const useGame = (userEmail, category) => {
       setGameOver(true);
     }
     setFeedback(null); // Limpiar el feedback al pasar a la siguiente pregunta
-    }, 5000); // 2 segundos para mostrar el feedback
+    }, 1000); // 2 segundos para mostrar el feedback
   };
   
 
   const restartGame = () => {
+    setSelectedTopic(null); // Reinicia el tema seleccionado
+    setSelectedCategory(null);
+    setQuestions([]);
     setCurrentQuestion(0);
     setScore(0);
     setGameOver(false);
