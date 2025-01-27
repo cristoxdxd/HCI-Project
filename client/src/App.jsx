@@ -10,7 +10,13 @@ const App = () => {
   const [user, setUser] = useState(null);
  
   const {
+    topics,
+    categories,
     questions,
+    selectedTopic,
+    setSelectedTopic,
+    selectedCategory,
+    setSelectedCategory,
     currentQuestion,
     score,
     gameOver,
@@ -30,10 +36,11 @@ const App = () => {
       <h1 className="text-4xl font-extrabold text-white mb-8 drop-shadow-lg">TuxLab</h1>
       
       {user ? (
+        selectedCategory ? (
           gameOver ? (
           <GameOver score={score} correctAnswers={correctAnswers} restartGame={restartGame} />
         ) : feedback ? (
-          <FeedbackCard feedback={feedback} /> // Mostrar FeedbackCard si hay retroalimentación
+          <FeedbackCard feedback={feedback} />
         ) : (
         <>
           <Score score={score} total={questions.length} />
@@ -45,6 +52,41 @@ const App = () => {
           )}
         </>
       )  
+    ) : (
+      <>
+       <label className="text-lg font-semibold mb-2 text-white">Selecciona un tema:</label>
+      <div className="w-64 mb-4">
+        <select
+          className="w-full p-2 rounded-lg bg-white text-gray-900 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          onChange={(e) => setSelectedTopic(e.target.value)}
+        >
+          <option value="">-- Seleccionar --</option>
+          {topics.map((topic) => (
+            <option key={topic.idtopic} value={topic.idtopic}>{topic.topic}</option>
+          ))}
+        </select>
+      </div>
+
+      {selectedTopic && (
+        <>
+          <label className="text-lg font-semibold mb-2 text-white">Selecciona una categoría:</label>
+          <div className="w-64 mb-4">
+            <select
+              className="w-full p-2 rounded-lg bg-white text-gray-900 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              onChange={(e) => setSelectedCategory(e.target.value)}
+            >
+              <option value="">-- Seleccionar --</option>
+              {categories.map((category) => (
+                <option key={category.idcategory} value={category.idcategory}>
+                  {category.category}
+                </option>
+              ))}
+            </select>
+          </div>
+        </>
+      )}
+    </>
+    )
     ): (
         <Login handleLogin={handleLogin} />
       )}

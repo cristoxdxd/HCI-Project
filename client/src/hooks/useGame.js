@@ -3,6 +3,10 @@ import axios from "axios";
 
 const useGame = (userEmail, category) => {
   const [questions, setQuestions] = useState([]);
+  const [topics, setTopics] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [selectedTopic, setSelectedTopic] = useState(null);
+  const [selectedCategory, setSelectedCategory] = useState(null);
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [score, setScore] = useState(0);
   const [gameOver, setGameOver] = useState(false);
@@ -10,17 +14,36 @@ const useGame = (userEmail, category) => {
   const [feedback, setFeedback] = useState(null);
 
   useEffect(() => {
-    const fetchQuestions = async () => {
-      try {
-        const response = await axios.get("/api/questions");
-        setQuestions(response.data);
-      } catch (error) {
-        console.error("Error fetching questions:", error);
-      }
-    };
-
-    fetchQuestions();
+    axios.get("/api/topics").then((res) => setTopics(res.data));
   }, []);
+
+  useEffect(() => {
+    axios.get("/api/topics")
+      .then((res) => setTopics(res.data))
+      .catch((error) => console.error("Error al obtener topics:", error));
+  }, []);
+
+  useEffect(() => {
+    if (selectedTopic) {
+      axios.get(`/api/categories/${selectedTopic}`)
+        .then((res) => setCategories(res.data))
+        .catch((error) => console.error("Error al obtener categories:", error));
+    }
+  }, [selectedTopic]);
+
+  // Obtener preguntas cuando cambia la categoría seleccionada
+  useEffect(() => {
+    if (selectedCategory) {
+      axios.get(`/api/questions/${selectedCategory}`)
+        .then((res) => {
+          setQuestions(Array.isArray(res.data) ? res.data : []);
+        })
+        .catch((error) => {
+          console.error("Error fetching questions:", error);
+          setQuestions([]);
+        });
+    }
+  }, [selectedCategory]);
 
   const handleAnswer = async (selectedOption, responseTime) => {
     
@@ -68,7 +91,13 @@ const useGame = (userEmail, category) => {
   };
 
   return {
+    topics,
+    categories,
     questions,
+    selectedTopic,
+    setSelectedTopic,
+    selectedCategory,
+    setSelectedCategory,
     currentQuestion,
     score,
     gameOver,
