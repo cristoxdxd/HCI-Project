@@ -19,46 +19,32 @@ const PORT = 3001;
 app.use(cors());
 app.use(express.json()); // Parse JSON bodies
 
-app.get("/api/categories", async (req, res) => {
+// Obtener topics
+app.get("/api/topics", async (req, res) => {
   try {
-    const result = await pool.query(`
-      SELECT 
-        c.idcategory, 
-        c.category,
-        sc.idsubcategory, 
-        sc.subcategory
-      FROM categories c
-      LEFT JOIN subcategories sc ON sc.idcategory = c.idcategory
-    `);
-
-    const categories = [];
-    result.rows.forEach((row) => {
-      const existingCategory = categories.find(
-        (cat) => cat.id === row.idcategory
-      );
-
-      if (existingCategory) {
-        existingCategory.subcategories.push({
-          id: row.idsubcategory,
-          name: row.subcategory,
-        });
-      } else {
-        categories.push({
-          id: row.idcategory,
-          name: row.category,
-          subcategories: row.idsubcategory
-            ? [{ id: row.idsubcategory, name: row.subcategory }]
-            : [],
-        });
-      }
-    });
-
-    res.json(categories);
+    const result = await pool.query("SELECT * FROM topics");
+    res.json(result.rows);
   } catch (error) {
-    console.error("Error fetching categories:", error);
-    res.status(500).json({ error: "Error al obtener las categorías" });
+    console.error("Error al obtener los topics:", error);
+    res.status(500).json({ error: "Error en el servidor" });
   }
 });
+
+// Obtener categories por topic
+app.get("/api/categories/:idTopic", async (req, res) => {
+  const { idTopic } = req.params;
+  try {
+    const result = await pool.query(
+      "SELECT * FROM categories WHERE idtopic = $1",
+      [idTopic]
+    );
+    res.json(result.rows);
+  } catch (error) {
+    console.error("Error al obtener las categorías:", error);
+    res.status(500).json({ error: "Error en el servidor" });
+  }
+});
+
 
 // Login Route
 app.post("/api/login", async (req, res) => {
@@ -127,19 +113,32 @@ app.post("/api/register", async (req, res) => {
 });
 
 // Question Route
-app.get("/api/questions", async (req, res) => {
+app.get("/api/questions/:idCategory", async (req, res) => {
   try {
     // Consulta SQL para obtener las preguntas y sus opciones
+    const { idCategory } = req.params;
+
+    console.log("Recibiendo solicitud para preguntas de la categoría:", idCategory);
+
     const result = await pool.query(`
     SELECT 
 		q.idquestion,  
     q.question,
 		q.correct,
+    q.feedback,
 		o.idoption,
 		o.option
     FROM questions q
     LEFT JOIN options o ON o.idquestion = q.idquestion
-    `);
+    WHERE q.idcategory = $1`,
+    [idCategory]
+    );
+
+    console.log("Resultado de la consulta:", result.rows);
+
+    if (!result.rows || result.rows.length === 0) {
+      return res.json([]); // Devolvemos un array vacío en caso de no haber resultados
+    }
 
     // Agrupar las opciones por cada pregunta
     const questions = [];
@@ -153,7 +152,8 @@ app.get("/api/questions", async (req, res) => {
           id: row.idquestion,
           question: row.question,
           correct: row.correct,
-          options: [row.option],
+          feedback: row.feedback,
+          options: row.option ? [row.option] : [],
         });
       }
     });
