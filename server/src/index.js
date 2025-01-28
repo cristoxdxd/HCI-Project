@@ -114,12 +114,33 @@ app.post("/api/register", async (req, res) => {
 });
 
 // Question Route
-app.get("/api/questions/:idCategory", async (req, res) => {
+app.get("/api/questions/:idCategory/:email", async (req, res) => {
   try {
     // Consulta SQL para obtener las preguntas y sus opciones
-    const { idCategory } = req.params;
+    const { idCategory, email } = req.params;
 
-    const result = await pool.query(`
+    // Obtener el userId y el next_level más reciente del usuario
+    const userResult = await pool.query(
+      "SELECT iduser FROM users WHERE email = $1",
+      [email]
+    );
+
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ error: "Usuario no encontrado" });
+    }
+
+    const userId = userResult.rows[0].iduser;
+
+    // Obtener el next_level más reciente del usuario
+    const levelResult = await pool.query(
+      "SELECT next_level FROM progress WHERE iduser = $1 ORDER BY idprogress DESC LIMIT 1",
+      [userId]
+    );
+
+    // Si no hay progreso registrado, asignar un nivel por defecto (nivel 1)
+    const nextLevel = levelResult.rows.length > 0 ? levelResult.rows[0].next_level : 1;
+
+    const query = `
     SELECT 
 		q.idquestion,  
     q.question,
@@ -129,11 +150,14 @@ app.get("/api/questions/:idCategory", async (req, res) => {
 		o.option
     FROM questions q
     LEFT JOIN options o ON o.idquestion = q.idquestion
-    WHERE q.idcategory = $1`,
-    [idCategory]
-    );
+    WHERE q.idcategory = $1 
+    AND q.idlevel = $2
+    AND q.idquestion NOT IN (
+    SELECT idquestion FROM progress WHERE iduser = $3
+    )
+    `;
 
-
+    const result = await pool.query(query, [idCategory, nextLevel, userId]);
 
     if (!result.rows || result.rows.length === 0) {
       return res.json([]); // Devolvemos un array vacío en caso de no haber resultados
@@ -164,7 +188,7 @@ app.get("/api/questions/:idCategory", async (req, res) => {
   }
 });
 
-// Ruta para guardar o actualizar el progreso del usuario
+// RUTA para guardar o actualizar el progreso del usuario
 app.post("/api/progress", async (req, res) => {
   const { email, idQuestion, status, responseTime } = req.body;
 
@@ -175,86 +199,44 @@ app.post("/api/progress", async (req, res) => {
   try {
     const responseTimeFormatted = parseFloat(responseTime).toFixed(2);
 
+    // 1. Obtener el userId
     const userResult = await pool.query("SELECT iduser FROM users WHERE email = $1", [email]);
     if (userResult.rows.length === 0) {
       return res.status(404).json({ error: "Usuario no encontrado" });
     }
     const userId = userResult.rows[0].iduser;
 
-    // Obtener idlevel desde la tabla questions
+    // 2. Obtener idlevel de la pregunta
     const questionResult = await pool.query("SELECT idlevel FROM questions WHERE idquestion = $1", [idQuestion]);
     if (questionResult.rows.length === 0) {
       return res.status(404).json({ error: "Pregunta no encontrada" });
     }
     const idlevel = questionResult.rows[0].idlevel;
 
-    // **Llamar al microservicio Flask para obtener next_level**
+    // 3. Llamar a Flask para predecir next_level
     const mlResponse = await axios.post("http://127.0.0.1:5000/predict", {
-      status: status,
+      status,
       response_time: responseTimeFormatted,
-      idlevel: idlevel
+      idlevel
     });
-
     const predictedLevel = mlResponse.data.predicted_level;
 
-    // **Insertar progreso con el next_level**
-    await pool.query(
-      `INSERT INTO progress (iduser, idquestion, status, response_time, idlevel, next_level)
-       VALUES ($1, $2, $3, $4, $5, $6)`,
-      [userId, idQuestion, status, responseTimeFormatted, idlevel, predictedLevel]
-    );app.post("/api/progress", async (req, res) => {
-  const { email, idQuestion, status, responseTime } = req.body;
+    // 4. Insertar registro en progress con next_level
+    await pool.query(`
+      INSERT INTO progress (iduser, idquestion, status, response_time, idlevel, next_level)
+      VALUES ($1, $2, $3, $4, $5, $6)
+    `, [userId, idQuestion, status, responseTimeFormatted, idlevel, predictedLevel]);
 
-  if (!email || !idQuestion || typeof status !== "boolean" || responseTime == null) {
-    return res.status(400).json({ error: "Faltan campos obligatorios" });
-  }
-
-  try {
-    const responseTimeFormatted = parseFloat(responseTime).toFixed(2);
-
-    const userResult = await pool.query("SELECT iduser FROM users WHERE email = $1", [email]);
-    if (userResult.rows.length === 0) {
-      return res.status(404).json({ error: "Usuario no encontrado" });
-    }
-    const userId = userResult.rows[0].iduser;
-
-    // Obtener idlevel desde la tabla questions
-    const questionResult = await pool.query("SELECT idlevel FROM questions WHERE idquestion = $1", [idQuestion]);
-    if (questionResult.rows.length === 0) {
-      return res.status(404).json({ error: "Pregunta no encontrada" });
-    }
-    const idlevel = questionResult.rows[0].idlevel;
-
-    // **Llamar al microservicio Flask para obtener next_level**
-    const mlResponse = await axios.post("http://127.0.0.1:5000/predict", {
-      status: status,
-      response_time: responseTimeFormatted,
-      idlevel: idlevel
+    res.status(200).json({
+      message: "Progreso guardado correctamente",
+      nextLevel: predictedLevel
     });
 
-    const predictedLevel = mlResponse.data.predicted_level;
-
-    // **Insertar progreso con el next_level**
-    await pool.query(
-      `INSERT INTO progress (iduser, idquestion, status, response_time, idlevel, next_level)
-       VALUES ($1, $2, $3, $4, $5, $6)`,
-      [userId, idQuestion, status, responseTimeFormatted, idlevel, predictedLevel]
-    );
-
-    res.status(200).json({ message: "Progreso guardado correctamente", nextLevel: predictedLevel });
   } catch (error) {
     console.error("Error al guardar el progreso:", error);
     res.status(500).json({ error: "Error en el servidor" });
   }
 });
-
-    res.status(200).json({ message: "Progreso guardado correctamente", nextLevel: predictedLevel });
-  } catch (error) {
-    console.error("Error al guardar el progreso:", error);
-    res.status(500).json({ error: "Error en el servidor" });
-  }
-});
-
 
 // Start the Server
 app.listen(PORT, () => {

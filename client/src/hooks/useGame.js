@@ -42,8 +42,8 @@ const useGame = (userEmail) => {
 
   // Obtener preguntas cuando cambia la categoría seleccionada
   useEffect(() => {
-    if (selectedCategory) {
-      axios.get(`/api/questions/${selectedCategory}`)
+    if (selectedCategory && userEmail) {
+      axios.get(`/api/questions/${selectedCategory}/${userEmail}`)
         .then((res) => {
           // Verificamos si res.data es un array
           const data = Array.isArray(res.data) ? res.data : [];
@@ -68,7 +68,7 @@ const useGame = (userEmail) => {
           setQuestions([]);
         });
     }
-  }, [selectedCategory]);
+  }, [selectedCategory, userEmail]);
 
   const handleAnswer = async (selectedOption, responseTime) => {
     
