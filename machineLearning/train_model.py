@@ -4,7 +4,7 @@ from sklearn.ensemble import RandomForestClassifier
 import pickle
 
 # 1) Carga del CSV
-df = pd.read_csv(r"machineLearning\Data\TrainingDataset.csv")  # Ajusta el nombre de tu CSV
+df = pd.read_csv("Data/TrainingDataset.csv")  # Ajusta el nombre de tu CSV
 
 
 # 3) Transformar 'status' booleano a entero (0/1)
