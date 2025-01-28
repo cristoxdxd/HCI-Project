@@ -30,7 +30,7 @@ X_train, X_test, y_train, y_test = train_test_split(X, y,
 model = RandomForestClassifier(
     n_estimators=100,
     max_depth=5,
-    min_samples_split=5,  # Debe haber al menos 5 muestras para hacer una división
+    min_samples_split=5, 
     min_samples_leaf=2,  # Cada hoja debe tener al menos 2 muestras
     random_state=42
 )

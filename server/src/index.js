@@ -153,7 +153,9 @@ app.get("/api/questions/:idCategory/:email", async (req, res) => {
     WHERE q.idcategory = $1 
     AND q.idlevel = $2
     AND q.idquestion NOT IN (
-    SELECT idquestion FROM progress WHERE iduser = $3
+    SELECT idquestion FROM progress 
+    WHERE iduser = $3 
+    AND status = TRUE -- Filtra solo las preguntas contestadas correctamente
     )
     `;
 

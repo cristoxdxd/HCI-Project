@@ -104,7 +104,7 @@ const useGame = (userEmail) => {
       setGameOver(true);
     }
     setFeedback(null); // Limpiar el feedback al pasar a la siguiente pregunta
-    }, 1000); // 2 segundos para mostrar el feedback
+    }, 8000); // 2 segundos para mostrar el feedback
   };
   
 
