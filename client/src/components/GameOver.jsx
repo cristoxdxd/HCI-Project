@@ -2,7 +2,7 @@ import React from 'react';
 
 const GameOver = ({ score, correctAnswers, restartGame }) => {
   return (
-    <div className="bg-gradient-to-r from-purple-600 via-pink-600 to-red-600 shadow-2xl rounded-lg p-10 w-full max-w-md text-center transform transition duration-500 hover:scale-105">
+    <div className="bg-gradient-to-r from-orange-600 via-orange-600 to-red-600 shadow-2xl rounded-lg p-10 w-full max-w-md text-center transform transition duration-500 hover:scale-105">
       <h2 className="text-3xl font-extrabold text-white mb-8">Game Over</h2>
       <p className="text-white text-xl mb-8">Your score: <span className="font-semibold">{score}</span></p>
       <button
