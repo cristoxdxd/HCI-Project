@@ -5,10 +5,12 @@ import Score from './components/Score';
 import GameOver from './components/GameOver';
 import FeedbackCard from "./components/FeedbackCard";
 import useGame from './hooks/useGame';
+import ToggleSwitch from "./components/ToggleSwitch"; 
 
 const App = () => {
   const [user, setUser] = useState(null);
- 
+  const [isIAEnabled, setIsIAEnabled] = useState(false);
+
   const {
     topics,
     categories,
@@ -24,70 +26,78 @@ const App = () => {
     correctAnswers,
     handleAnswer,
     restartGame,
-  } = useGame(user);
+  } = useGame(user,isIAEnabled);
 
   const handleLogin = (email) => {
     setUser(email);  // Guardar el email del usuario autenticado
   };
 
- 
+
   return (
     <div className="min-h-screen bg-gradient-to-r from-black via-gray-900 to-gray-800 flex flex-col items-center justify-center text-center p-5">
       <h1 className="text-4xl font-extrabold text-white mb-8 drop-shadow-lg">TuxLab</h1>
-      
+      {user && (
+        <div className="mb-4">
+          <ToggleSwitch
+            isEnabled={isIAEnabled}
+            onToggle={() => setIsIAEnabled((prev) => !prev)}
+          />
+        </div>
+      )}
+
       {user ? (
         selectedCategory ? (
           gameOver ? (
-          <GameOver score={score} correctAnswers={correctAnswers} restartGame={restartGame} />
-        ) : feedback ? (
-          <FeedbackCard feedback={feedback} />
+            <GameOver score={score} correctAnswers={correctAnswers} restartGame={restartGame} />
+          ) : feedback ? (
+            <FeedbackCard feedback={feedback} />
+          ) : (
+            <>
+              <Score score={score} total={questions.length} />
+              {questions.length > 0 && (
+                <QuestionCard
+                  question={questions[currentQuestion]}
+                  handleAnswer={handleAnswer}
+                />
+              )}
+            </>
+          )
         ) : (
-        <>
-          <Score score={score} total={questions.length} />
-          {questions.length > 0 && (
-            <QuestionCard
-              question={questions[currentQuestion]}
-              handleAnswer={handleAnswer}
-            />
-          )}
-        </>
-      )  
-    ) : (
-      <>
-       <label className="text-lg font-semibold mb-2 text-white">Selecciona un tema:</label>
-      <div className="w-64 mb-4">
-        <select
-          className="w-full p-2 rounded-lg bg-white text-gray-900 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          onChange={(e) => setSelectedTopic(e.target.value)}
-        >
-          <option value="">-- Seleccionar --</option>
-          {topics.map((topic) => (
-            <option key={topic.idtopic} value={topic.idtopic}>{topic.topic}</option>
-          ))}
-        </select>
-      </div>
+          <>
+            <label className="text-lg font-semibold mb-2 text-white">Selecciona un tema:</label>
+            <div className="w-64 mb-4">
+              <select
+                className="w-full p-2 rounded-lg bg-white text-gray-900 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                onChange={(e) => setSelectedTopic(e.target.value)}
+              >
+                <option value="">-- Seleccionar --</option>
+                {topics.map((topic) => (
+                  <option key={topic.idtopic} value={topic.idtopic}>{topic.topic}</option>
+                ))}
+              </select>
+            </div>
 
-      {selectedTopic && (
-        <>
-          <label className="text-lg font-semibold mb-2 text-white">Selecciona una categoría:</label>
-          <div className="w-64 mb-4">
-            <select
-              className="w-full p-2 rounded-lg bg-white text-gray-900 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              onChange={(e) => setSelectedCategory(e.target.value)}
-            >
-              <option value="">-- Seleccionar --</option>
-              {categories.map((category) => (
-                <option key={category.idcategory} value={category.idcategory}>
-                  {category.category}
-                </option>
-              ))}
-            </select>
-          </div>
-        </>
-      )}
-    </>
-    )
-    ): (
+            {selectedTopic && (
+              <>
+                <label className="text-lg font-semibold mb-2 text-white">Selecciona una categoría:</label>
+                <div className="w-64 mb-4">
+                  <select
+                    className="w-full p-2 rounded-lg bg-white text-gray-900 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    onChange={(e) => setSelectedCategory(e.target.value)}
+                  >
+                    <option value="">-- Seleccionar --</option>
+                    {categories.map((category) => (
+                      <option key={category.idcategory} value={category.idcategory}>
+                        {category.category}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </>
+            )}
+          </>
+        )
+      ) : (
         <Login handleLogin={handleLogin} />
       )}
     </div>
