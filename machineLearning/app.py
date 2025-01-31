@@ -30,7 +30,7 @@ class ThompsonSampling:
 # Instancia del modelo con 3 niveles
 ts_model = ThompsonSampling(num_levels=3)
 
-def simulate_responses(num_simulations=100):
+def simulate_responses(num_simulations=10):
     """
     Simula respuestas de usuarios para evaluar cómo se comporta el modelo en el tiempo.
     """
@@ -62,6 +62,8 @@ def simulate_responses(num_simulations=100):
     print("\nResultados finales después de la simulación:\n")
     for i in range(3):
         print(f"Nivel {i}: {ts_model.successes[i]:.0f} éxitos, {ts_model.failures[i]:.0f} fallos")
+        
+simulate_responses()
 
 @app.route("/predict", methods=["POST"])
 def predict():
@@ -83,19 +85,23 @@ def predict():
 
         # Seleccionar el siguiente nivel
         next_level = ts_model.select_level()
-        next_level =next_level+1;
+        next_level =next_level+1
         print("nexlevel; ",next_level)
+        print("response time: ", processed_data['response_time'])
 
         # Ajustar la lógica de recompensa para 3 niveles
         if processed_data['status'] == 1:  # Respuesta correcta
-            if processed_data['response_time'] < 10:
-                reward = 3 if processed_data['idlevel'] == 2 else 2 if processed_data['idlevel'] == 1 else 1
-            elif processed_data['response_time'] < 20:
-                reward = 2 if processed_data['idlevel'] == 2 else 1
+            if processed_data['response_time'] < 8:
+                print("menor 10")
+                reward = 5 if processed_data['idlevel'] == 2 else 4 if processed_data['idlevel'] == 1 else 3
+            elif processed_data['response_time'] < 15:
+                print("menor 20")
+                reward = 3 if processed_data['idlevel'] == 2 else 1
             else:
+                print("muy tarde")
                 reward = 1 if processed_data['idlevel'] == 2 else 0
         else:  # Respuesta incorrecta
-            reward = -1  # Penalización
+            reward = 0  # Penalización
 
         reward = max(0, reward)  # Asegurar que la recompensa mínima sea 0
 
