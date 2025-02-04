@@ -10,6 +10,12 @@ const FeedbackCard = ({ feedback }) => {
             feedback.isCorrect ? "text-green-500" : "text-red-500"
           } font-extrabold text-4xl`}
         >
+          <audio autoPlay>
+            <source
+              src={feedback.isCorrect ? "/muy_bien.mp3" : "/no_acertaste.mp3"}
+              type="audio/mpeg"
+            />
+          </audio>
           {feedback.isCorrect ? "¡Muy bien!" : "¡No acertaste!"}
         </h2>
       </div>
@@ -36,10 +42,7 @@ const FeedbackCard = ({ feedback }) => {
 
       {/* Imagen */}
       <div className="mt-6">
-        <img
-          src="./public/tux-logo.jpg"
-          alt="Tux Mascot"
-        />
+        <img src="/tux-logo.jpg" alt="Tux Mascot" />
       </div>
     </div>
   );
