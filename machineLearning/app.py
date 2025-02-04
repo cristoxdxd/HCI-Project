@@ -46,6 +46,7 @@ ts_model = ThompsonSampling(num_levels=3)
 def predict():
     try:
         data = request.json
+        print("dara",data)
         
         required_fields = ['status', 'response_time', 'idlevel']
         
@@ -78,6 +79,7 @@ def predict():
 
         # 📌 Actualizar el modelo con la recompensa
         ts_model.update(processed_data['idlevel'], reward)
+        print("leve", next_level)
 
         return jsonify({
             "next_level": int(next_level),
@@ -87,6 +89,48 @@ def predict():
                 "failures_per_level": ts_model.failures.tolist()
             }
         })
+        
+        
+        # required_fields = ['status', 'response_time', 'idlevel']
+        
+        # for field in required_fields:
+        #     if field not in data:
+        #         return jsonify({"error": f"Campo requerido faltante: {field}"})
+        
+        # # Convertir datos
+        # processed_data = {
+        #     'status': int(data['status']),
+        #     'response_time': float(data['response_time']),
+        #     'idlevel': int(data['idlevel']) - 1,  # Convertir nivel a 0,1,2
+        # }
+        
+        # print("po:", processed_data)
+
+        # # 📌 Seleccionar siguiente nivel basado en éxito/fallo y Thompson Sampling
+        # next_level = ts_model.select_level(processed_data['idlevel']) + 1  # Convertir de nuevo a 1,2,3
+
+        # # 📌 Ajustar la lógica de recompensa para 3 niveles
+        # if processed_data['status'] == 1:  # Respuesta correcta
+        #     if processed_data['response_time'] < 8:
+        #         reward = 3 if processed_data['idlevel'] == 2 else 2 if processed_data['idlevel'] == 1 else 1
+        #     elif processed_data['response_time'] < 15:
+        #         reward = 2 if processed_data['idlevel'] == 2 else 1
+        #     else:
+        #         reward = 1 if processed_data['idlevel'] == 2 else 0
+        # else:  # Respuesta incorrecta
+        #     reward = -3  # Penalización más controlada
+
+        # # 📌 Actualizar el modelo con la recompensa
+        # ts_model.update(processed_data['idlevel'], reward)
+
+        # return jsonify({
+        #     "next_level": int(next_level),
+        #     "reward": reward,
+        #     "current_metrics": {
+        #         "successes_per_level": ts_model.successes.tolist(),
+        #         "failures_per_level": ts_model.failures.tolist()
+        #     }
+        # })
         
     except Exception as e:
         return jsonify({"error": str(e)})
