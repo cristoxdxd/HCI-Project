@@ -93,9 +93,11 @@ const useGame = (userEmail, isEnabled) => {
             nextQuestionIndex = Math.floor(Math.random() * remainingQuestions.length);
             randomized = true;
           }
+          console.log("sobran preguntas?", remainingQuestions.length)
           
           if (remainingQuestions.length > 0 && nextQuestionIndex !== -1) {
             const selectedQuestion = remainingQuestions[nextQuestionIndex];
+            console.log("selectedQuestion", selectedQuestion)
             setCurrentQuestion((prev) => prev + 1);
             
             setFeedback((prevFeedback) => ({
@@ -111,6 +113,7 @@ const useGame = (userEmail, isEnabled) => {
             
             setQuestions(remainingQuestions);
           } else {
+            console.log("cambiar a game over")
             setGameOver(true);
           }
           
