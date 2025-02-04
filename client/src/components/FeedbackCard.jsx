@@ -57,7 +57,7 @@ const FeedbackCard = ({ feedback }) => {
 
 
       {showNextLevelMessage && feedback.nextLevelInfo && (
-        feedback.isEnabe ? (
+        feedback.isEnabled ? (
           <p className="text-blue-600 font-semibold mt-3">
             {feedback.nextLevelInfo}
           </p>

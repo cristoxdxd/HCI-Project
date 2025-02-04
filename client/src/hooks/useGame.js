@@ -11,7 +11,7 @@ function shuffleArray(array) {
   return result;
 }
 
-const useGame = (userEmail, isEnabe) => {
+const useGame = (userEmail, isEnabled) => {
   const [questions, setQuestions] = useState([]);
   const [topics, setTopics] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -50,18 +50,18 @@ const useGame = (userEmail, isEnabe) => {
 
   const handleAnswer = useCallback(
     async (selectedOption, responseTime) => {
-      const isCorrect =
-        selectedOption === questions[currentQuestionRef.current].correct;
-  
+      const isCorrect = selectedOption === questions[currentQuestionRef.current].correct;
+      console.log("veamos: ", isEnabled)
       setFeedback({
         isCorrect,
         correctAnswer: questions[currentQuestionRef.current].correct,
         details: questions[currentQuestionRef.current].feedback,
-        nextLevelInfo: null, // Esto se actualizará más tarde
-        randomized: false, // Indica si la pregunta fue elegida aleatoriamente
+        nextLevelInfo: null,
+        randomized: false,
         nextLevel: null,
+        isEnabled,
       });
-  
+      
       try {
         const response = await axios.post("/api/progress", {
           email: userEmail,
@@ -69,78 +69,61 @@ const useGame = (userEmail, isEnabe) => {
           status: isCorrect,
           responseTime: responseTime,
         });
-        console.log("data",response)
-        // Obtener el siguiente nivel desde la respuesta del backend
+        
         const nextLevel = response?.data?.nextLevel || null;
-        console.log("nextLeve", nextLevel)
-  
+        console.log("next: ", nextLevel)
+        
         setTimeout(() => {
           let randomized = false;
           const remainingQuestions = questions.filter(
             (_, index) => index !== currentQuestionRef.current
           );
-
-          console.log("remainingQA", remainingQuestions)
-  
-          // Buscar la siguiente pregunta según el nextLevel, si existe
+          console.log("preguntas restantes", remainingQuestions)
+          
           let nextQuestionIndex = -1;
-          if (nextLevel) {
+          
+          if (isEnabled && nextLevel) {
+            console.log("ia")
             nextQuestionIndex = remainingQuestions.findIndex(
               (q) => String(q.idlevel) === String(nextLevel)
             );
           }
-
-          console.log("nextQ", nextQuestionIndex)
-  
-          // Si no se encuentra una pregunta con el nextLevel, buscar una aleatoria
+          
           if (nextQuestionIndex === -1 && remainingQuestions.length > 0) {
             nextQuestionIndex = Math.floor(Math.random() * remainingQuestions.length);
-            randomized = true; // Marcar que se seleccionó aleatoriamente
-            console.log("entore a ver randomizado")
+            randomized = true;
           }
-  
-          // Si la opción de aleatorio está activada (por ejemplo, isRandomActive es true)
-          if (isRandomActive) {
-            nextQuestionIndex = Math.floor(Math.random() * remainingQuestions.length);
-            randomized = true; // Forzar la selección aleatoria
-            console.log("activo el randomize")
-          }
-  
-          // Si encontramos una pregunta para la siguiente ronda
+          
           if (remainingQuestions.length > 0 && nextQuestionIndex !== -1) {
             const selectedQuestion = remainingQuestions[nextQuestionIndex];
-  
-            setCurrentQuestion((prev) => prev + 1); // Avanzar a la siguiente pregunta
+            setCurrentQuestion((prev) => prev + 1);
             
-            console.log("randomize",randomized)
-
             setFeedback((prevFeedback) => ({
               ...prevFeedback,
-              nextLevelInfo: randomized
-                ? `No hay más preguntas del nivel ${nextLevel}, seleccionando una aleatoriamente...`
-                : `La siguiente pregunta será del nivel ${nextLevel}.`,
+              nextLevelInfo: isEnabled
+                ? randomized
+                  ? `No hay más preguntas del nivel ${nextLevel}, seleccionando una aleatoriamente...`
+                  : `La siguiente pregunta será del nivel ${nextLevel}.`
+                : "Selección Aleatoria Activada",
               randomized,
               nextLevel: selectedQuestion.idlevel,
             }));
-  
+            
             setQuestions(remainingQuestions);
           } else {
-            // Si no hay más preguntas, finalizar el juego
             setGameOver(true);
           }
-  
+          
           setTimeout(() => {
-            setFeedback(null); // Limpiar el feedback después de 6 segundos
+            setFeedback(null);
           }, 6000);
-  
-        }, 4000); // Espera 4 segundos antes de continuar a la siguiente pregunta
-  
+        }, 4000);
       } catch (error) {
         console.error("Error al guardar el progreso:", error);
       }
     },
-    [questions, userEmail, isRandomActive] // Asegúrate de tener isRandomActive en los hooks
-  );
+    [questions, userEmail, isEnabled]
+  ); 
   
 
   // Handle button press event from WebSocket message
