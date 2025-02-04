@@ -5,65 +5,39 @@ import random
 app = Flask(__name__)
 
 class ThompsonSampling:
-    def __init__(self, num_levels=3):  # Solo 3 niveles: Fácil, Medio, Difícil
+    def __init__(self, num_levels=3):
         self.num_levels = num_levels
         self.successes = np.zeros(num_levels)  # Recompensas positivas (éxitos)
         self.failures = np.zeros(num_levels)   # Recompensas negativas (fallos)
 
-    def select_level(self):
+    def select_level(self, current_level):
         """
         Selecciona el nivel de dificultad basado en Thompson Sampling con 3 niveles.
         """
         sampled_values = [np.random.beta(self.successes[i] + 1, self.failures[i] + 1) 
                           for i in range(self.num_levels)]
-        return np.argmax(sampled_values)  # Selecciona el nivel con mayor probabilidad de éxito
+        
+        best_level = np.argmax(sampled_values)
+
+        # 📌 Ajuste: Si hay demasiadas fallas en un nivel, bajar de nivel
+        if self.failures[current_level] >= 3 and current_level > 0:
+            return current_level - 1  # Baja de nivel si hay 3 fallas consecutivas
+
+        return best_level
 
     def update(self, level, reward):
         """
         Actualiza el modelo con la recompensa obtenida.
         """
         if reward > 0:
-            self.successes[level] += reward  # Más recompensa si es difícil y rápido
+            self.successes[level] += reward  
         else:
-            self.failures[level] += 1  # Penalización por fallar
+            self.failures[level] += 1  # Contar fallas
+            if self.failures[level] >= 3 and level > 0:
+                print(f"📉 Muchas fallas en nivel {level}, bajando de nivel.")
 
 # Instancia del modelo con 3 niveles
 ts_model = ThompsonSampling(num_levels=3)
-
-def simulate_responses(num_simulations=10):
-    """
-    Simula respuestas de usuarios para evaluar cómo se comporta el modelo en el tiempo.
-    """
-    print("\nIniciando simulación con 1000 respuestas...\n")
-
-    for i in range(num_simulations):
-        level = ts_model.select_level()  # Seleccionar nivel recomendado por el modelo
-
-        # Simulación de respuesta del usuario
-        response_correct = random.choice([True, False])  # El usuario acierta o falla
-        response_time = random.uniform(5, 30)  # Tiempo de respuesta en segundos
-
-        # Definir recompensa con 3 niveles
-        if response_correct and response_time < 10:
-            reward = 3 if level == 2 else 2 if level == 1 else 1
-        elif response_correct and response_time < 20:
-            reward = 2 if level == 2 else 1
-        elif response_correct:
-            reward = 1 if level == 2 else 0
-        else:
-            reward = -1  # Penalización por fallar
-
-        reward = max(0, reward)  # No permitir valores negativos en recompensa
-
-        # Actualizar el modelo con la respuesta simulada
-        ts_model.update(level, reward)
-
-    # Imprimir métricas finales después de la simulación
-    print("\nResultados finales después de la simulación:\n")
-    for i in range(3):
-        print(f"Nivel {i}: {ts_model.successes[i]:.0f} éxitos, {ts_model.failures[i]:.0f} fallos")
-        
-simulate_responses()
 
 @app.route("/predict", methods=["POST"])
 def predict():
@@ -80,32 +54,26 @@ def predict():
         processed_data = {
             'status': int(data['status']),
             'response_time': float(data['response_time']),
-            'idlevel': int(data['idlevel'])-1,  # Nivel actual (0 = Fácil, 2 = Difícil)
+            'idlevel': int(data['idlevel']) - 1,  # Convertir nivel a 0,1,2
         }
+        
+        print("po:", processed_data)
 
-        # Seleccionar el siguiente nivel
-        next_level = ts_model.select_level()
-        next_level =next_level+1
-        print("nexlevel; ",next_level)
-        print("response time: ", processed_data['response_time'])
+        # 📌 Seleccionar siguiente nivel basado en éxito/fallo y Thompson Sampling
+        next_level = ts_model.select_level(processed_data['idlevel']) + 1  # Convertir de nuevo a 1,2,3
 
-        # Ajustar la lógica de recompensa para 3 niveles
+        # 📌 Ajustar la lógica de recompensa para 3 niveles
         if processed_data['status'] == 1:  # Respuesta correcta
             if processed_data['response_time'] < 8:
-                print("menor 10")
-                reward = 5 if processed_data['idlevel'] == 2 else 4 if processed_data['idlevel'] == 1 else 3
+                reward = 3 if processed_data['idlevel'] == 2 else 2 if processed_data['idlevel'] == 1 else 1
             elif processed_data['response_time'] < 15:
-                print("menor 20")
-                reward = 3 if processed_data['idlevel'] == 2 else 1
+                reward = 2 if processed_data['idlevel'] == 2 else 1
             else:
-                print("muy tarde")
                 reward = 1 if processed_data['idlevel'] == 2 else 0
         else:  # Respuesta incorrecta
-            reward = 0  # Penalización
+            reward = -3  # Penalización más controlada
 
-        reward = max(0, reward)  # Asegurar que la recompensa mínima sea 0
-
-        # Actualizar el modelo
+        # 📌 Actualizar el modelo con la recompensa
         ts_model.update(processed_data['idlevel'], reward)
 
         return jsonify({
