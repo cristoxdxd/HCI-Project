@@ -5,6 +5,7 @@ const GameOver = ({ score, correctAnswers, restartGame }) => {
     <div className="bg-gradient-to-r from-orange-600 via-orange-600 to-red-600 shadow-2xl rounded-lg p-10 w-full max-w-md text-center transform transition duration-500 hover:scale-105">
       <h2 className="text-3xl font-extrabold text-white mb-8">Game Over</h2>
       <p className="text-white text-xl mb-8">Your score: <span className="font-semibold">{score}</span></p>
+      <p className='text-green-600 text-xl mb-8 '> Respuestas correctas <span className='font-semibold'></span> {correctAnswers} </p>
       <button
         onClick={restartGame}
         className="bg-white text-purple-700 font-bold py-3 px-8 rounded-full hover:bg-purple-800 hover:text-white transition duration-300 transform hover:scale-110"

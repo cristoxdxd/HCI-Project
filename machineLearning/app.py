@@ -21,7 +21,10 @@ class ThompsonSampling:
 
         # 📌 Ajuste: Si hay demasiadas fallas en un nivel, bajar de nivel
         if self.failures[current_level] >= 3 and current_level > 0:
-            return current_level - 1  # Baja de nivel si hay 3 fallas consecutivas
+            if current_level == 0:
+                return current_level
+            else:
+                return current_level - 1  # Baja de nivel si hay 3 fallas consecutivas
 
         return best_level
 
