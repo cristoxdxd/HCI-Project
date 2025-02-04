@@ -11,7 +11,7 @@ function shuffleArray(array) {
   return result;
 }
 
-const useGame = (userEmail) => {
+const useGame = (userEmail, isEnabe) => {
   const [questions, setQuestions] = useState([]);
   const [topics, setTopics] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -23,6 +23,7 @@ const useGame = (userEmail) => {
   const [gameOver, setGameOver] = useState(false);
   const [correctAnswers, setCorrectAnswers] = useState([]);
   const [feedback, setFeedback] = useState(null);
+  const [isRandomActive, setIsRandomActive] = useState(false);
 
   const [forceUpdate, setForceUpdate] = useState(false);
 
@@ -51,38 +52,96 @@ const useGame = (userEmail) => {
     async (selectedOption, responseTime) => {
       const isCorrect =
         selectedOption === questions[currentQuestionRef.current].correct;
-
+  
       setFeedback({
         isCorrect,
-        correctAnswer: questions[currentQuestionRef.current].correct, // Respuesta correcta
-        details: questions[currentQuestionRef.current].feedback, // Detalle adicional
+        correctAnswer: questions[currentQuestionRef.current].correct,
+        details: questions[currentQuestionRef.current].feedback,
+        nextLevelInfo: null, // Esto se actualizará más tarde
+        randomized: false, // Indica si la pregunta fue elegida aleatoriamente
+        nextLevel: null,
       });
-
-      // Guardar el progreso en el backend
+  
       try {
-        await axios.post("/api/progress", {
-          email: userEmail, // Asegúrate de pasar el email del usuario autenticado
+        const response = await axios.post("/api/progress", {
+          email: userEmail,
           idQuestion: questions[currentQuestionRef.current].id,
           status: isCorrect,
           responseTime: responseTime,
         });
+        console.log("data",response)
+        // Obtener el siguiente nivel desde la respuesta del backend
+        const nextLevel = response?.data?.nextLevel || null;
+        console.log("nextLeve", nextLevel)
+  
+        setTimeout(() => {
+          let randomized = false;
+          const remainingQuestions = questions.filter(
+            (_, index) => index !== currentQuestionRef.current
+          );
+
+          console.log("remainingQA", remainingQuestions)
+  
+          // Buscar la siguiente pregunta según el nextLevel, si existe
+          let nextQuestionIndex = -1;
+          if (nextLevel) {
+            nextQuestionIndex = remainingQuestions.findIndex(
+              (q) => String(q.idlevel) === String(nextLevel)
+            );
+          }
+
+          console.log("nextQ", nextQuestionIndex)
+  
+          // Si no se encuentra una pregunta con el nextLevel, buscar una aleatoria
+          if (nextQuestionIndex === -1 && remainingQuestions.length > 0) {
+            nextQuestionIndex = Math.floor(Math.random() * remainingQuestions.length);
+            randomized = true; // Marcar que se seleccionó aleatoriamente
+            console.log("entore a ver randomizado")
+          }
+  
+          // Si la opción de aleatorio está activada (por ejemplo, isRandomActive es true)
+          if (isRandomActive) {
+            nextQuestionIndex = Math.floor(Math.random() * remainingQuestions.length);
+            randomized = true; // Forzar la selección aleatoria
+            console.log("activo el randomize")
+          }
+  
+          // Si encontramos una pregunta para la siguiente ronda
+          if (remainingQuestions.length > 0 && nextQuestionIndex !== -1) {
+            const selectedQuestion = remainingQuestions[nextQuestionIndex];
+  
+            setCurrentQuestion((prev) => prev + 1); // Avanzar a la siguiente pregunta
+            
+            console.log("randomize",randomized)
+
+            setFeedback((prevFeedback) => ({
+              ...prevFeedback,
+              nextLevelInfo: randomized
+                ? `No hay más preguntas del nivel ${nextLevel}, seleccionando una aleatoriamente...`
+                : `La siguiente pregunta será del nivel ${nextLevel}.`,
+              randomized,
+              nextLevel: selectedQuestion.idlevel,
+            }));
+  
+            setQuestions(remainingQuestions);
+          } else {
+            // Si no hay más preguntas, finalizar el juego
+            setGameOver(true);
+          }
+  
+          setTimeout(() => {
+            setFeedback(null); // Limpiar el feedback después de 6 segundos
+          }, 6000);
+  
+        }, 4000); // Espera 4 segundos antes de continuar a la siguiente pregunta
+  
       } catch (error) {
         console.error("Error al guardar el progreso:", error);
       }
-
-      setTimeout(() => {
-        // Actualizar el estado local del juego
-        setScore((prevScore) => (isCorrect ? prevScore + 1 : prevScore));
-        if (currentQuestionRef.current < questions.length - 1) {
-          setCurrentQuestion((prev) => prev + 1);
-        } else {
-          setGameOver(true);
-        }
-        setFeedback(null); // Limpiar el feedback al pasar a la siguiente pregunta
-      }, 4000); // 2 segundos para mostrar el feedback
     },
-    [questions, userEmail]
+    [questions, userEmail, isRandomActive] // Asegúrate de tener isRandomActive en los hooks
   );
+  
 
   // Handle button press event from WebSocket message
   const handleButtonPress = useCallback(
@@ -116,7 +175,7 @@ const useGame = (userEmail) => {
           setCurrentOption((prevOption) => {
             const newOption =
               prevOption <
-              questions[currentQuestionRef.current].options.length - 1
+                questions[currentQuestionRef.current].options.length - 1
                 ? prevOption + 1
                 : prevOption;
             console.log("Updated currentOption (ArrowDown):", newOption);
@@ -202,6 +261,7 @@ const useGame = (userEmail) => {
           console.log("Shuffled questions:", shuffledQuestions); // Debug log
 
           setQuestions(shuffledQuestions);
+          console.log("shufle: ", shuffledQuestions)
           setCurrentQuestion(0);
           setScore(0);
           setGameOver(false);
@@ -213,6 +273,155 @@ const useGame = (userEmail) => {
         });
     }
   }, [selectedCategory, userEmail]);
+
+
+  // const handleAnswer = async (selectedOption, responseTime) => {
+  //   const isCorrect = selectedOption === questions[currentQuestion].correct;
+
+  //   setFeedback({
+  //     isCorrect,
+  //     correctAnswer: questions[currentQuestion].correct,
+  //     details: questions[currentQuestion].feedback,
+  //     nextLevelInfo: null, // Se actualizará más adelante
+  //     randomized: false, // Indica si la pregunta fue elegida aleatoriamente
+  //     nextLevel: null,
+  //   });
+
+  //   try {
+  //     const response = await axios.post("/api/progress", {
+  //       email: userEmail,
+  //     correctAnswer: questions[currentQuestion].correct,
+  //     details: questions[currentQuestion].feedback,
+  //     nextLevelInfo: null, // Se actualizará más adelante
+  //     randomized: false, // Indica si la pregunta fue elegida aleatoriamente
+  //     nextLevel: null,
+  //   });
+
+  //   try {
+  //     const response = await axios.post("/api/progress", {
+  //       email: userEmail,
+  //       idQuestion: questions[currentQuestion].id,
+  //       status: isCorrect,
+  //       responseTime: responseTime,
+  //     });
+
+  //     const nextLevel = response.data?.nextLevel;
+
+  //     setTimeout(() => {
+  //       setScore((prevScore) => (isCorrect ? prevScore + 1 : prevScore));
+  //       setCorrectAnswers((correctAnswers)=>(isCorrect ? correctAnswers+1:correctAnswers));
+
+  //       // Filtrar preguntas restantes
+  //       const remainingQuestions = questions.filter((_, index) => index !== currentQuestion);
+
+  //       // Buscar preguntas con el nivel `nextLevel`
+  //       let nextQuestionIndex = remainingQuestions.findIndex(q => q.idlevel === nextLevel);
+  //       let randomized = false;
+
+  //       if (nextQuestionIndex === -1 && remainingQuestions.length > 0) {
+  //         nextQuestionIndex = Math.floor(Math.random() * remainingQuestions.length);
+  //         randomized = true; // Marcar que se seleccionó aleatoriamente
+  //       }else if(!isEnabe){
+  //         nextQuestionIndex = Math.floor(Math.random() * remainingQuestions.length);
+  //       }
+
+  //       if (remainingQuestions.length > 0 && nextQuestionIndex !== -1) {
+  //         const selectedQuestion = remainingQuestions[nextQuestionIndex];
+
+  //         setCurrentQuestion(questions.findIndex(q => q.id === selectedQuestion.id));
+  //         setQuestions(remainingQuestions);
+
+  //         // Actualizar feedback
+  //         setFeedback((prevFeedback) => ({
+  //           ...prevFeedback,
+  //           nextLevelInfo: randomized
+  //             ? `No hay más preguntas del nivel ${nextLevel}, seleccionando una pregunta aleatoria...`
+  //             : `La siguiente pregunta será del nivel ${nextLevel}.`,
+  //           randomized,
+  //           isEnabe,
+  //           nextLevel: selectedQuestion.idlevel,
+
+  //         }));
+
+
+  //         setTimeout(() => {
+  //           setFeedback(null); // Esto permite que el juego continúe
+  //         }, 6000); // Espera 2 segundos antes de ocultar el feedback
+  //       }
+  //     }, 3000);
+
+  //   } catch (error) {
+  //     console.error("Error al guardar el progreso:", error);
+  //   }
+  // };
+
+  // const handleAnswer = async (selectedOption, responseTime) => {
+  //   const isCorrect = selectedOption === questions[currentQuestion].correct;
+
+  //   setFeedback({
+  //     isCorrect,
+  //     correctAnswer: questions[currentQuestion].correct,
+  //     details: questions[currentQuestion].feedback,
+  //     nextLevel: null, // Se actualizará después
+  //   });
+
+  //   try {
+  //     const response = await axios.post("/api/progress", {
+  //       email: userEmail,
+  //       idQuestion: questions[currentQuestion].id,
+  //       status: isCorrect,
+  //       responseTime: responseTime,
+  //     });
+
+  //     console.log("response en handleAnswer: ", response);
+
+  //     const nextLevel = response.data?.nextLevel;
+  //     console.log("nextLevel:", nextLevel);
+
+  //     setTimeout(() => {
+  //       setScore((prevScore) => (isCorrect ? prevScore + 1 : prevScore));
+
+  //       const remainingQuestions = questions.filter((_, index) => index !== currentQuestion);
+  //       let nextQuestionIndex = remainingQuestions.findIndex(q => q.idlevel === nextLevel);
+
+  //       if (nextQuestionIndex === -1 && remainingQuestions.length > 0) {
+  //         nextQuestionIndex = Math.floor(Math.random() * remainingQuestions.length);
+  //       }
+
+  //       if (remainingQuestions.length > 0 && nextQuestionIndex !== -1) {
+  //         const selectedQuestion = remainingQuestions[nextQuestionIndex];
+
+  //         setCurrentQuestion(questions.findIndex(q => q.id === selectedQuestion.id)); 
+  //         setQuestions(remainingQuestions); 
+
+  //         setFeedback((prevFeedback) => ({
+  //           ...prevFeedback,
+  //           nextLevel: selectedQuestion.idlevel,
+  //         }));
+
+  //         // 🛑 Aquí agregamos la línea para limpiar el feedback después de mostrarlo
+  //         setTimeout(() => {
+  //           setFeedback(null); // Esto permite que el juego continúe
+  //         }, 2000); // Espera 2 segundos antes de ocultar el feedback
+  //       }
+  //     }, 3000);
+
+
+  //   } catch (error) {
+  //     console.error("Error al guardar el progreso:", error);
+  //   }
+  // };
+
+
+  // const restartGame = () => {
+  //   setSelectedTopic(null); // Reinicia el tema seleccionado
+  //   setSelectedCategory(null);
+  //   setQuestions([]);
+  //   setCurrentQuestion(0);
+  //   setScore(0);
+  //   setGameOver(false);
+  //   setCorrectAnswers([]);
+  // };
 
   return {
     topics,

@@ -4,10 +4,12 @@ import QuestionCard from "./components/QuestionCard";
 import Score from "./components/Score";
 import GameOver from "./components/GameOver";
 import FeedbackCard from "./components/FeedbackCard";
-import useGame from "./hooks/useGame";
+import useGame from './hooks/useGame';
+import ToggleSwitch from "./components/ToggleSwitch"; 
 
 const App = () => {
   const [user, setUser] = useState(null);
+  const [isIAEnabled, setIsIAEnabled] = useState(false);
 
   const {
     topics,
@@ -25,7 +27,7 @@ const App = () => {
     correctAnswers,
     handleAnswer,
     restartGame,
-  } = useGame(user);
+  } = useGame(user,isIAEnabled);
 
   const handleLogin = (email) => {
     setUser(email); // Save the authenticated user's email
@@ -42,9 +44,15 @@ const App = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-r from-black via-gray-900 to-gray-800 flex flex-col items-center justify-center text-center p-5">
-      <h1 className="text-4xl font-extrabold text-white mb-8 drop-shadow-lg">
-        TuxLab
-      </h1>
+      <h1 className="text-4xl font-extrabold text-white mb-8 drop-shadow-lg">TuxLab</h1>
+      {user && (
+        <div className="mb-4">
+          <ToggleSwitch
+            isEnabled={isIAEnabled}
+            onToggle={() => setIsIAEnabled((prev) => !prev)}
+          />
+        </div>
+      )}
 
       {user ? (
         selectedCategory ? (
