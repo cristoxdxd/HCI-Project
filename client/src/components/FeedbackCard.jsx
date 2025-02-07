@@ -7,10 +7,15 @@ const FeedbackCard = ({ feedback }) => {
 
   useEffect(() => {
     if (feedback.nextLevelInfo) {
+      // Muestra el mensaje del siguiente nivel después de un retraso de 1.5 segundos
       setTimeout(() => setShowNextLevelMessage(true), 1500);
+
+      // Si la selección es aleatoria, muestra ese mensaje después de 2 segundos
       if (feedback.randomized) {
         setTimeout(() => setShowRandomSelectionMessage(true), 2000);
       }
+
+      // Muestra el mensaje final del siguiente nivel después de 3.5 segundos
       setTimeout(() => setShowFinalNextLevel(true), 3500);
     }
   }, [feedback.nextLevelInfo, feedback.randomized]);
@@ -54,30 +59,15 @@ const FeedbackCard = ({ feedback }) => {
       </div>
 
       {/* Mensaje sobre el siguiente nivel */}
-
-
       {showNextLevelMessage && feedback.nextLevelInfo && (
-        feedback.isEnabe ? (
-          <p className="text-blue-600 font-semibold mt-3">
-            {feedback.nextLevelInfo}
-          </p>
-        ) : (
-          <p className="text-red-500 font-semibold mt-3">Selección Aleatoria</p>
-        )
-      )}
-
-
-      {showRandomSelectionMessage && feedback.randomized && (
-        <p className="text-red-500 font-semibold mt-3">
-          No hay más preguntas del nivel indicado, seleccionando una pregunta aleatoria...
+        <p className="text-blue-600 font-semibold mt-3">
+          {feedback.randomized
+            ? (feedback.isIAEnabled
+              ? "No hay más preguntas del nivel, seleccionando una aleatoria..."
+              : "Modo aleatorio activado. Seleccionando una pregunta al azar...")
+            : feedback.nextLevelInfo}
         </p>
       )}
-
-      {/* {showFinalNextLevel && feedback.nextLevel !== null && (
-        <p className="text-purple-600 font-semibold mt-3">
-          Próxima pregunta - Nivel: <strong>{feedback.nextLevel}</strong>
-        </p>
-      )} */}
 
       {/* Imagen */}
       <div className="mt-6">
