@@ -1,16 +1,18 @@
 const express = require("express");
 const cors = require("cors");
-const { Pool } = require("pg");
+const { createClient } = require("@libsql/client");
 const bcrypt = require("bcrypt");
 const axios = require("axios");
+const http = require("http");
+const { Server } = require("socket.io");
+
 require("dotenv").config();
 
-const pool = new Pool({
-  host: process.env.DB_HOST,
-  port: process.env.DB_PORT,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
+const pool = createClient({
+  url: "file:local.db",
+  syncUrl: process.env.TURSO_DATABASE_URL,
+  authToken: process.env.TURSO_AUTH_TOKEN,
+  syncInterval: 10000,
 });
 
 const app = express();
