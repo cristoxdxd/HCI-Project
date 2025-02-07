@@ -65,7 +65,6 @@ const useGame = (userEmail, isIAEnabled) => {
         if (gameOver) return;  // Prevenir actualizaciones después de que el juego termine
 
         console.log(`Preguntas restantes: ${questions.length - (currentQuestionRef.current + 1)}`);
-
         let randomized = false;
         let nextQuestionIndex = -1;
 
