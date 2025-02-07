@@ -22,4 +22,5 @@ const ToggleSwitch = ({ isEnabled, onToggle }) => {
   );
 };
 
+
 export default ToggleSwitch;
